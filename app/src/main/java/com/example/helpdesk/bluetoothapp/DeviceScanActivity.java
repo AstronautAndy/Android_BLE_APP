@@ -7,10 +7,14 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,9 +25,15 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class DeviceScanActivity extends Activity {
-
+    private List<ScanFilter> filterList; //Used as a parameter in the startScan method used below
+    private ScanSettings scanSettings;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
     private LeDeviceListAdapter mLeDeviceListAdapter;
@@ -43,7 +53,130 @@ public class DeviceScanActivity extends Activity {
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner(); //use the scanner to scan for BLE devices instead of the adapter
+        mHandler = new Handler(); //create a new handler with an empty constructor
+        filterList = new List<ScanFilter>() {
+            @Override
+            public int size() {
+                return 0;
+            }
 
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return false;
+            }
+
+            @NonNull
+            @Override
+            public Iterator<ScanFilter> iterator() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public Object[] toArray() {
+                return new Object[0];
+            }
+
+            @NonNull
+            @Override
+            public <T> T[] toArray(@NonNull T[] a) {
+                return null;
+            }
+
+            @Override
+            public boolean add(ScanFilter scanFilter) {
+                return false;
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                return false;
+            }
+
+            @Override
+            public boolean containsAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(@NonNull Collection<? extends ScanFilter> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(int index, @NonNull Collection<? extends ScanFilter> c) {
+                return false;
+            }
+
+            @Override
+            public boolean removeAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean retainAll(@NonNull Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public void clear() {
+
+            }
+
+            @Override
+            public ScanFilter get(int index) {
+                return null;
+            }
+
+            @Override
+            public ScanFilter set(int index, ScanFilter element) {
+                return null;
+            }
+
+            @Override
+            public void add(int index, ScanFilter element) {
+
+            }
+
+            @Override
+            public ScanFilter remove(int index) {
+                return null;
+            }
+
+            @Override
+            public int indexOf(Object o) {
+                return 0;
+            }
+
+            @Override
+            public int lastIndexOf(Object o) {
+                return 0;
+            }
+
+            @Override
+            public ListIterator<ScanFilter> listIterator() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public ListIterator<ScanFilter> listIterator(int index) {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public List<ScanFilter> subList(int fromIndex, int toIndex) {
+                return null;
+            }
+        };
+        createFilters();
+        createScanSettings();
         // Ensures Bluetooth is available on the device and it is enabled. If not,
         // displays a dialog requesting user permission to enable Bluetooth.
         if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
@@ -66,15 +199,15 @@ public class DeviceScanActivity extends Activity {
                 @Override
                 public void run() { //THis line is causing problems
                     mScanning = false;
-                    mBluetoothLeScanner.stopScan((ScanCallback) mLeScanCallback);
+                    mBluetoothLeScanner.stopScan(mScanCallback);
                 }
             }, SCAN_PERIOD);
 
             mScanning = true;
-            mBluetoothLeScanner.startScan(null,null, (ScanCallback) mLeScanCallback);
+            mBluetoothLeScanner.startScan(filterList,scanSettings, mScanCallback);
         } else {
             mScanning = false;
-            mBluetoothLeScanner.stopScan((ScanCallback) mLeScanCallback);
+            mBluetoothLeScanner.stopScan(mScanCallback);
         }
     }
     /**
@@ -149,6 +282,7 @@ public class DeviceScanActivity extends Activity {
             return view;
         }
     }
+
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
@@ -167,4 +301,28 @@ public class DeviceScanActivity extends Activity {
         TextView deviceName;
         TextView deviceAddress;
     }
+
+    /**
+     * This class is used to serve as the callBack for the BLE scan performed in this activity
+     */
+    private ScanCallback mScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
+        }
+    };
+
+    /**
+     * This method will be used to create the set of filters used in the startScan method
+     */
+    private void createFilters() {
+        ScanFilter sf1 = new ScanFilter.Builder().build(); //Creates a blank scan filter
+        filterList.add(sf1);
+    }
+
+    private void createScanSettings(){
+        scanSettings = new ScanSettings.Builder().build();
+
+    }
+
 }
