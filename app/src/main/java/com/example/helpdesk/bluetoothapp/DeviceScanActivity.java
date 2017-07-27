@@ -10,8 +10,10 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -30,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import static java.security.AccessController.getContext;
+
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class DeviceScanActivity extends Activity {
     private List<ScanFilter> filterList; //Used as a parameter in the startScan method used below
@@ -40,6 +44,11 @@ public class DeviceScanActivity extends Activity {
     private boolean mScanning;
     private Handler mHandler;
     private final static int REQUEST_ENABLE_BT = 1; //Note that this must be consistent with the value used in the return method
+    BLEDeviceDbHelper mDbHelper; //Create an instance of the class that'll allow us to store data to the disk
+    SQLiteDatabase db; //Retrives the database that'll allow us to store data
+    ContentValues values = new ContentValues(); //Place data into this object to be inserted into the SQLiteDatabase
+    public static final String[] QUERY_UUID = new String[1];
+
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
 
@@ -48,6 +57,12 @@ public class DeviceScanActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_scan);
+
+        //code used for initializing the database that will be used in this program
+        //mDbHelper.onCreate(db);
+        Context context = getApplicationContext();
+        mDbHelper = new BLEDeviceDbHelper(context);
+        db = mDbHelper.getWritableDatabase();
 
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -293,6 +308,15 @@ public class DeviceScanActivity extends Activity {
                         public void run() {
                             mLeDeviceListAdapter.addDevice(device);
                             mLeDeviceListAdapter.notifyDataSetChanged();
+                            //Code for adding newly discovered Devices to the database
+                            QUERY_UUID[0] = BLEContract.BLEEntry.UUID_TITLE + " = " + device.getUuids().toString(); //Initialize argument that will be placed into the query command
+                            //The following IF statement is saying "if the query asking for the UUID we just found returns 0, meaning it can't find the UUID, add a row with the newly found device's information"
+                            if(db.query(BLEContract.BLEEntry.TABLE_NAME,BLEContract.BLEEntry.ALL_COLUMNS,BLEContract.BLEEntry.UUID_TITLE,QUERY_UUID,null,null,null).getCount() == 0) {
+                                values.put(BLEContract.BLEEntry.UUID_TITLE, device.getUuids().toString()); //Places the UUID in String form in the UUID column of the DB
+                                values.put(BLEContract.BLEEntry.DEVICE_NAME, device.getName());
+                                values.put(BLEContract.BLEEntry.SENIOR_NAME_TITLE, "Senior_name"); //Insert a default name for a newly discovered senior
+                                values.put(BLEContract.BLEEntry.ROOM_NUMBER_TITLE, "Room_Number");
+                            }
                         }
                     });
                 }
@@ -322,6 +346,13 @@ public class DeviceScanActivity extends Activity {
 
     private void createScanSettings(){
         scanSettings = new ScanSettings.Builder().build();
+
+    }
+
+    /**
+     * This method will be used to update the number of buttons that are presented onscreen. Should be called after initiating a scan.
+     */
+    void updateUI(){
 
     }
 
