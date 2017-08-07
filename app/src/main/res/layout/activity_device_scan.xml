@@ -32,8 +32,10 @@
         android:onClick="beginScan"
         android:text="@string/begin_ble_scan" />
 
-    <TextView android:id="@+id/device_name"
+
+    <LinearLayout
+        android:id="@+id/BLEList"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="24dp"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical"></LinearLayout>
 </LinearLayout>

@@ -14,16 +14,21 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -47,6 +52,8 @@ public class DeviceScanActivity extends Activity {
     BLEDeviceDbHelper mDbHelper; //Create an instance of the class that'll allow us to store data to the disk
     SQLiteDatabase db; //Retrives the database that'll allow us to store data
     ContentValues values = new ContentValues(); //Place data into this object to be inserted into the SQLiteDatabase
+    LinearLayout BLEDevicesSet; //Layout used for storing the widgets that represent the number of nearby available BLE devices
+    RelativeLayout.LayoutParams buttonParams;
     public static final String[] QUERY_UUID = new String[1];
 
     // Stops scanning after 10 seconds.
@@ -55,9 +62,16 @@ public class DeviceScanActivity extends Activity {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        buttonParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+        );
+        buttonParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        buttonParams.addRule(RelativeLayout.CENTER_VERTICAL);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_scan);
-
+        BLEDevicesSet = (LinearLayout) findViewById(R.id.BLEList);
         //code used for initializing the database that will be used in this program
         //mDbHelper.onCreate(db);
         Context context = getApplicationContext();
@@ -69,6 +83,7 @@ public class DeviceScanActivity extends Activity {
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner(); //use the scanner to scan for BLE devices instead of the adapter
         mHandler = new Handler(); //create a new handler with an empty constructor
+        mLeDeviceListAdapter = new LeDeviceListAdapter();
         filterList = new List<ScanFilter>() {
             @Override
             public int size() {
@@ -212,7 +227,7 @@ public class DeviceScanActivity extends Activity {
             mHandler.postDelayed(new Runnable() {
                 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                 @Override
-                public void run() { //THis line is causing problems
+                public void run() {
                     mScanning = false;
                     mBluetoothLeScanner.stopScan(mScanCallback);
                 }
@@ -220,6 +235,7 @@ public class DeviceScanActivity extends Activity {
 
             mScanning = true;
             mBluetoothLeScanner.startScan(filterList,scanSettings, mScanCallback);
+
         } else {
             mScanning = false;
             mBluetoothLeScanner.stopScan(mScanCallback);
@@ -249,12 +265,15 @@ public class DeviceScanActivity extends Activity {
         public LeDeviceListAdapter() {
             super();
             mLeDevices = new ArrayList<BluetoothDevice>();
-            mInflator = DeviceScanActivity.this.getLayoutInflater();
+            mInflator = DeviceScanActivity.this.getLayoutInflater(); //This class uses an inflator
         }
         public void addDevice(BluetoothDevice device) {
             if(!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
+                LinearLayout newDevice = (LinearLayout) mLeDeviceListAdapter.getView(mLeDeviceListAdapter.getCount() - 1, null, null );
+                updateUI(newDevice);
             }
+            Log.d("LeDeviceManager", "Number of devices in adapter: " + Integer.toString( mLeDevices.size() ) );
         }
         public BluetoothDevice getDevice(int position) {
             return mLeDevices.get(position);
@@ -275,16 +294,18 @@ public class DeviceScanActivity extends Activity {
             return i;
         }
         @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
+        public View getView(int i, View view, ViewGroup viewGroup) { //Use this method to obtain the views representing each device available.
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
-                view = mInflator.inflate(R.layout.listitem_device, null);
+                Log.d("getView","Passed in View is NULL");
+                view = (LinearLayout) mInflator.inflate(R.layout.listitem_device, null);
                 viewHolder = new ViewHolder();
                 viewHolder.deviceAddress = (TextView) view.findViewById(R.id.device_address);
                 viewHolder.deviceName = (TextView) view.findViewById(R.id.device_name);
                 view.setTag(viewHolder);
             } else {
+                Log.d("getView","Passed in View is not NULL");
                 viewHolder = (ViewHolder) view.getTag();
             }
             BluetoothDevice device = mLeDevices.get(i);
@@ -298,29 +319,7 @@ public class DeviceScanActivity extends Activity {
         }
     }
 
-    // Device scan callback.
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-                @Override
-                public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mLeDeviceListAdapter.addDevice(device);
-                            mLeDeviceListAdapter.notifyDataSetChanged();
-                            //Code for adding newly discovered Devices to the database
-                            QUERY_UUID[0] = BLEContract.BLEEntry.UUID_TITLE + " = " + device.getUuids().toString(); //Initialize argument that will be placed into the query command
-                            //The following IF statement is saying "if the query asking for the UUID we just found returns 0, meaning it can't find the UUID, add a row with the newly found device's information"
-                            if(db.query(BLEContract.BLEEntry.TABLE_NAME,BLEContract.BLEEntry.ALL_COLUMNS,BLEContract.BLEEntry.UUID_TITLE,QUERY_UUID,null,null,null).getCount() == 0) {
-                                values.put(BLEContract.BLEEntry.UUID_TITLE, device.getUuids().toString()); //Places the UUID in String form in the UUID column of the DB
-                                values.put(BLEContract.BLEEntry.DEVICE_NAME, device.getName());
-                                values.put(BLEContract.BLEEntry.SENIOR_NAME_TITLE, "Senior_name"); //Insert a default name for a newly discovered senior
-                                values.put(BLEContract.BLEEntry.ROOM_NUMBER_TITLE, "Room_Number");
-                            }
-                        }
-                    });
-                }
-            };
+
     static class ViewHolder {
         TextView deviceName;
         TextView deviceAddress;
@@ -330,10 +329,47 @@ public class DeviceScanActivity extends Activity {
      * This class is used to serve as the callBack for the BLE scan performed in this activity
      */
     private ScanCallback mScanCallback = new ScanCallback() {
+
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
+            Log.d("ScanCallback","onScanResult() is being called");
+            Log.d("ScanCallback","Call back type: " + Integer.toString(callbackType));
+            BluetoothDevice device = result.getDevice();
+            mLeDeviceListAdapter.addDevice(device);
+            Log.d("ScanCallback",Integer.toString(BLEDevicesSet.getChildCount()) ) ;
+            mLeDeviceListAdapter.notifyDataSetChanged();
         }
+
+
+        /**
+         * Performs the same function as the above method, only with a batch of BLE devices.
+         * @param results
+         */
+        /**
+        @Override
+        public void onBatchScanResults(List<ScanResult> results){
+            Log.d("ScanCallback","onScanBatchResults() is being called");
+            for(int i=0; i<results.size(); i++){
+                BluetoothDevice currDevice = results.get(i).getDevice();
+                mLeDeviceListAdapter.addDevice(currDevice);
+                LinearLayout newDevice = (LinearLayout) mLeDeviceListAdapter.getView(mLeDeviceListAdapter.getCount() - 1, null, null );
+                updateUI(newDevice);
+                mLeDeviceListAdapter.notifyDataSetChanged();
+            }
+
+             //Code for adding newly discovered Devices to the database
+             QUERY_UUID[0] = BLEContract.BLEEntry.UUID_TITLE + " = " + device.getUuids().toString(); //Initialize argument that will be placed into the query command
+             //The following IF statement is saying "if the query asking for the UUID we just found returns 0, meaning it can't find the UUID, add a row with the newly found device's information"
+             if(db.query(BLEContract.BLEEntry.TABLE_NAME,BLEContract.BLEEntry.ALL_COLUMNS,BLEContract.BLEEntry.UUID_TITLE,QUERY_UUID,null,null,null).getCount() == 0) {
+             values.put(BLEContract.BLEEntry.UUID_TITLE, device.getUuids().toString()); //Places the UUID in String form in the UUID column of the DB
+             values.put(BLEContract.BLEEntry.DEVICE_NAME, device.getName());
+             values.put(BLEContract.BLEEntry.SENIOR_NAME_TITLE, "Senior_name"); //Insert a default name for a newly discovered senior
+             values.put(BLEContract.BLEEntry.ROOM_NUMBER_TITLE, "Room_Number");
+             }
+
+        }
+        */
     };
 
     /**
@@ -345,15 +381,30 @@ public class DeviceScanActivity extends Activity {
     }
 
     private void createScanSettings(){
-        scanSettings = new ScanSettings.Builder().build();
+        ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
+        scanSettingsBuilder = scanSettingsBuilder.setScanMode(1); //Sets the mode to SCAN_MODE_LOW_POWER
+        scanSettings = scanSettingsBuilder.build(); //Build the scan settings using the builder we created.
 
     }
 
     /**
      * This method will be used to update the number of buttons that are presented onscreen. Should be called after initiating a scan.
      */
-    void updateUI(){
-
+    void updateUI(final ViewGroup newDevice){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                BLEDevicesSet.addView(newDevice,buttonParams);
+            }
+        });
     }
 
+    /**
+     * Method used to open the edit BLE device information interface
+     * @param view
+     */
+    public void editInfo(View view){
+        view.setBackgroundColor(Color.BLUE);
+        //view.setBackgroundColor(Color.WHITE);
+    }
 }
