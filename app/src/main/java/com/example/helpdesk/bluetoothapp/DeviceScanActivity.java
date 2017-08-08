@@ -241,23 +241,7 @@ public class DeviceScanActivity extends Activity {
             mBluetoothLeScanner.stopScan(mScanCallback);
         }
     }
-    /**
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-                @Override
-                public void onLeScan(final BluetoothDevice device, int rssi,
-                                     byte[] scanRecord) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mLeDeviceListAdapter.addDevice(device);
-                            mLeDeviceListAdapter.notifyDataSetChanged();
-                        }
-                    });
-                }
 
-            };
-    */
     // Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<BluetoothDevice> mLeDevices;
@@ -318,7 +302,6 @@ public class DeviceScanActivity extends Activity {
             return view;
         }
     }
-
 
     static class ViewHolder {
         TextView deviceName;
@@ -405,6 +388,7 @@ public class DeviceScanActivity extends Activity {
      */
     public void editInfo(View view){
         view.setBackgroundColor(Color.BLUE);
-        //view.setBackgroundColor(Color.WHITE);
+        Intent intent = new Intent(this,EditDeviceInfo.class);
+        startActivity(intent);
     }
 }
