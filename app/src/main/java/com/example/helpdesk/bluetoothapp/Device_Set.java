@@ -157,7 +157,18 @@ public class Device_Set {
         }
     }
 
+    /**
+     * Method used to retrieve the name of a senior given the MAC address
+     * @param macAddress
+     * @return
+     */
+    public static String getSeniorname(String macAddress){
+        return( macAddMap.get(macAddress).getSenior_name() );
+    }
 
+    public static String getSeniorRmNmber(String macAddress){
+        return( macAddMap.get(macAddress).getSenior_rm_nmber() );
+    }
 
     public static class ble_Device {
         private String senior_name;
@@ -183,6 +194,22 @@ public class Device_Set {
 
         public void setBlockedState(){
             state = 2;
+        }
+
+        public String getDevice_name() {
+            return device_name;
+        }
+
+        public String getSenior_rm_nmber() {
+            return senior_rm_nmber;
+        }
+
+        public String getMac_address() {
+            return mac_address;
+        }
+
+        public String getSenior_name() {
+            return senior_name;
         }
     }
 }

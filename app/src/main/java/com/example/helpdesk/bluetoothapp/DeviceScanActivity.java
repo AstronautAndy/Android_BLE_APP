@@ -31,6 +31,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -256,6 +258,7 @@ public class DeviceScanActivity extends Activity {
                 mLeDevices.add(device);
                 LinearLayout newDevice = (LinearLayout) mLeDeviceListAdapter.getView(mLeDeviceListAdapter.getCount() - 1, null, null );
                 updateUI(newDevice);
+                Device_Set.addNewDevice(device.getName(),device.getAddress(),"Senior_name","Room_number");
             }
             Log.d("LeDeviceManager", "Number of devices in adapter: " + Integer.toString( mLeDevices.size() ) );
         }
@@ -389,6 +392,8 @@ public class DeviceScanActivity extends Activity {
     public void editInfo(View view){
         view.setBackgroundColor(Color.BLUE);
         Intent intent = new Intent(this,EditDeviceInfo.class);
+        TextView mAddress = (TextView) view.findViewById(R.id.device_address);
+        intent.putExtra("MAC_Address",mAddress.getText().toString() );
         startActivity(intent);
     }
 }

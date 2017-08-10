@@ -21,6 +21,9 @@
     <string name="Manufacturing_Name">Manufacturing Name</string>
     <string name="MAC_Address">MAC Address</string>
     <string name="Signal_Strength">Signal Strength</string>
+    <string name="Edit_Snr_nme_button_save">Done</string>
+    <string name="Default_resident_name">Resident Name</string>
+    <string name="Default_resident_rm_nmber">Room number</string>
 
     <!-- Menu items -->
     <string name="menu_connect">Connect</string>
