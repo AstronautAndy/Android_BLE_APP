@@ -1,14 +1,22 @@
 package com.example.helpdesk.bluetoothapp;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by ortiza on 8/7/17.
+ * This class is used to store a list of ble_Device objects (an internal class), each of which hold
+ * important information pertaining to the devices that the application might need to connect to.
+ * Remember that the application needs to discover ble devices and connect to specific ones depending
+ * on the user's input. This class is used to store information that's accessible to all activities
+ * to avoid ugly code that attempts to pass large amounts Device information via intent.
  */
 
 /**
@@ -16,145 +24,36 @@ import java.util.Set;
  */
 public class Device_Set {
     private static ArrayList<ble_Device> ble_DeviceSet = new ArrayList();
-    private static Map<String,ble_Device> nameMap = new Map<String, ble_Device>() {
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public boolean containsKey(Object key) {
-            return false;
-        }
-
-        @Override
-        public boolean containsValue(Object value) {
-            return false;
-        }
-
-        @Override
-        public ble_Device get(Object key) {
-            return null;
-        }
-
-        @Override
-        public ble_Device put(String key, ble_Device value) {
-            return null;
-        }
-
-        @Override
-        public ble_Device remove(Object key) {
-            return null;
-        }
-
-        @Override
-        public void putAll(@NonNull Map<? extends String, ? extends ble_Device> m) {
-
-        }
-
-        @Override
-        public void clear() {
-
-        }
-
-        @NonNull
-        @Override
-        public Set<String> keySet() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Collection<ble_Device> values() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Set<Entry<String, ble_Device>> entrySet() {
-            return null;
-        }
-    }; //Used for quick lookups when the senior's name is known in an activity
-    private static Map<String, ble_Device> macAddMap = new Map<String, ble_Device>() {
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public boolean containsKey(Object key) {
-            return false;
-        }
-
-        @Override
-        public boolean containsValue(Object value) {
-            return false;
-        }
-
-        @Override
-        public ble_Device get(Object key) {
-            return null;
-        }
-
-        @Override
-        public ble_Device put(String key, ble_Device value) {
-            return null;
-        }
-
-        @Override
-        public ble_Device remove(Object key) {
-            return null;
-        }
-
-        @Override
-        public void putAll(@NonNull Map<? extends String, ? extends ble_Device> m) {
-
-        }
-
-        @Override
-        public void clear() {
-
-        }
-
-        @NonNull
-        @Override
-        public Set<String> keySet() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Collection<ble_Device> values() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Set<Entry<String, ble_Device>> entrySet() {
-            return null;
-        }
-    }; //Used for lookups when the senior's name is not known
-
+    private static HashMap<String,ble_Device> macAddMap = new HashMap<String, ble_Device>();
+    private static ArrayList<ble_Device> savedDevices = new ArrayList<>(); //List of devices that have been "saved" by the user
     /**
      * Function used to add a new ble_device to the set of devices.
      */
-    static void addNewDevice(String device_name, String mac_address, String senior_name, String senior_rm_nmber){
+    public static void addNewDevice(String device_name, String mac_address, String senior_name, String senior_rm_nmber){
         ble_Device newDevice = new ble_Device(device_name,mac_address,senior_name,senior_rm_nmber);
         ble_DeviceSet.add(newDevice);
         macAddMap.put(mac_address,newDevice);
-        if(nameMap.get(senior_name) == null){
-            nameMap.put(senior_name,newDevice);
-        }
+        Log.d("DEBUG","MacAdd map size: " + macAddMap.size());
+    }
+
+    /**
+     * Returns the number of devices located in the ble_DeviceSet ArrayList
+     * @return
+     */
+    public static int getSize(){
+        return ble_DeviceSet.size();
+    }
+
+    public static void setNewName(String macAddress, String newName){
+        macAddMap.get(macAddress).setSenior_name(newName);
+    }
+
+    public static void setNewRmNumber(String macAddress, String newNumber){
+        macAddMap.get(macAddress).setSenior_rm_nmber(newNumber);
+    }
+
+    public static void setDeviceState(String macAddress, int newState){
+        macAddMap.get(macAddress).setNewState(newState);
     }
 
     /**
@@ -163,11 +62,16 @@ public class Device_Set {
      * @return
      */
     public static String getSeniorname(String macAddress){
+        Log.d("DEBUG", "Found Senior name: " + macAddMap.get(macAddress).getSenior_name());
         return( macAddMap.get(macAddress).getSenior_name() );
     }
 
     public static String getSeniorRmNmber(String macAddress){
         return( macAddMap.get(macAddress).getSenior_rm_nmber() );
+    }
+
+    public static String getDeviceName(String macAddress){
+        return( macAddMap.get(macAddress).getDevice_name() );
     }
 
     public static class ble_Device {
@@ -180,12 +84,15 @@ public class Device_Set {
         /*
         Default constructor
          */
-        public ble_Device(String device_name, String mac_address, String senior_name, String senior_rm_nmber){
-
+        private ble_Device(String Device_name, String Mac_address, String Senior_name, String Senior_rm_nmber){
+            senior_name = Senior_name;
+            mac_address = Mac_address;
+            senior_rm_nmber = Senior_rm_nmber;
+            device_name = Device_name;
         }
 
-        public void setSavedState(){
-            state = 1;
+        public void setNewState(int newState){
+            state = newState;
         }
 
         public void setUnsavedState(){
@@ -204,6 +111,8 @@ public class Device_Set {
             return senior_rm_nmber;
         }
 
+        public void setSenior_rm_nmber(String newRoom) {senior_rm_nmber = newRoom;}
+
         public String getMac_address() {
             return mac_address;
         }
@@ -211,5 +120,7 @@ public class Device_Set {
         public String getSenior_name() {
             return senior_name;
         }
+
+        public void setSenior_name(String newName) {senior_name = newName;}
     }
 }

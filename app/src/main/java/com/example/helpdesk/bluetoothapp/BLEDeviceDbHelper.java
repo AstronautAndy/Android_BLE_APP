@@ -6,6 +6,10 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 /**
  * Created by ortiza on 7/26/17.
+ * This class is used to handle all interactions between the program and the SQL database instantiated
+ * in this program. Any activity that wants to load data from or save data to the database will
+ * create an instance of this class , loading its context into the object's constructor parameter.
+ * The activity can then call the public methods implemented to use the Database.
  */
 
 public class BLEDeviceDbHelper extends SQLiteOpenHelper{

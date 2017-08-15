@@ -5,6 +5,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+/**
+ * As the name implies, this activity serves as the main menu of the program, as it is the one that
+ * the user can utilize to navigate among the different activities and features that the app has to
+ * offer.
+ */
+
 public class MainActivity extends AppCompatActivity {
 
     @Override

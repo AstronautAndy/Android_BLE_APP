@@ -41,6 +41,15 @@ import java.util.ListIterator;
 
 import static java.security.AccessController.getContext;
 
+/**
+ * This class (activity) is used to run a scan that discovers all available BLE devices in range and
+ * displays each devices' manufacturer name and MAC address. The user then has the option to modify
+ * information the application associates with each device, such as the associated resident's name
+ * and room number. Note that modifying the device's associated information, by default, will add it
+ * to the "saved devices" list, which the application uses to connect to the GATT servers located on
+ * the designated "saved" devices. Note that most of the work being done is through the 
+ */
+
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class DeviceScanActivity extends Activity {
     private List<ScanFilter> filterList; //Used as a parameter in the startScan method used below
@@ -64,7 +73,7 @@ public class DeviceScanActivity extends Activity {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        buttonParams = new RelativeLayout.LayoutParams(
+        buttonParams = new RelativeLayout.LayoutParams( //this object is used to store parameter information about the
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT
         );
@@ -258,9 +267,11 @@ public class DeviceScanActivity extends Activity {
                 mLeDevices.add(device);
                 LinearLayout newDevice = (LinearLayout) mLeDeviceListAdapter.getView(mLeDeviceListAdapter.getCount() - 1, null, null );
                 updateUI(newDevice);
+                Log.d("DEBUG","Device name being added: " + device.getName() );
                 Device_Set.addNewDevice(device.getName(),device.getAddress(),"Senior_name","Room_number");
             }
             Log.d("LeDeviceManager", "Number of devices in adapter: " + Integer.toString( mLeDevices.size() ) );
+            Log.d("DEBUG","Number of devices in device set: " + Integer.toString(Device_Set.getSize()) );
         }
         public BluetoothDevice getDevice(int position) {
             return mLeDevices.get(position);
@@ -390,10 +401,11 @@ public class DeviceScanActivity extends Activity {
      * @param view
      */
     public void editInfo(View view){
-        view.setBackgroundColor(Color.BLUE);
+        //view.setBackgroundColor(Color.BLUE);
         Intent intent = new Intent(this,EditDeviceInfo.class);
         TextView mAddress = (TextView) view.findViewById(R.id.device_address);
         intent.putExtra("MAC_Address",mAddress.getText().toString() );
+        //intent.putExtra("SigStrength",) //Figure out how to do this. May need to fennagle with this later
         startActivity(intent);
     }
 }

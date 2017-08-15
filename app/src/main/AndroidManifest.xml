@@ -26,7 +26,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".DeviceScanActivity" />
-        <activity android:name=".EditDeviceInfo"></activity>
+        <activity android:name=".EditDeviceInfo" />
+        <activity android:name=".ViewSavedDevices"></activity>
     </application>
 
 </manifest>
